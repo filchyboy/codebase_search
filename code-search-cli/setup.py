@@ -8,7 +8,7 @@ setup(
     version="0.1.0",
     author="Your Name",
     author_email="your.email@example.com",
-    description="A CLI tool for searching through codebases",
+    description="An interactive CLI tool for searching through codebases",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/yourusername/code-search-cli",

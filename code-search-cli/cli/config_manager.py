@@ -29,16 +29,9 @@ class ConfigManager:
     def _create_default_config(self) -> None:
         """Create a default configuration file."""
         default_config = {
+            "setup_complete": False,
             "base_dir": str(Path.home()),
-            "exclusions": [
-                "*.pyc",
-                "__pycache__",
-                "*.git",
-                "*.svn",
-                "node_modules",
-                "venv",
-                ".env"
-            ]
+            "exclusions": []
         }
         self.save_config(default_config)
 
@@ -46,7 +39,7 @@ class ConfigManager:
         """Load the configuration from file."""
         try:
             with open(self.config_file, "r") as f:
-                return yaml.safe_load(f)
+                return yaml.safe_load(f) or {}
         except Exception as e:
             raise Exception(f"Failed to load config: {str(e)}")
 
@@ -54,6 +47,17 @@ class ConfigManager:
         """Save the configuration to file."""
         with open(self.config_file, "w") as f:
             yaml.dump(config, f)
+
+    def is_setup_complete(self) -> bool:
+        """Check if initial setup has been completed."""
+        config = self._load_config()
+        return config.get("setup_complete", False)
+
+    def mark_setup_complete(self) -> None:
+        """Mark the setup as complete."""
+        config = self._load_config()
+        config["setup_complete"] = True
+        self.save_config(config)
 
     def get_base_dir(self) -> str:
         """Get the base directory for code search."""
@@ -70,6 +74,12 @@ class ConfigManager:
         """Get the list of exclusion patterns."""
         config = self._load_config()
         return config.get("exclusions", [])
+
+    def set_exclusions(self, exclusions: List[str]) -> None:
+        """Set the list of exclusion patterns."""
+        config = self._load_config()
+        config["exclusions"] = exclusions
+        self.save_config(config)
 
     def add_exclusion(self, pattern: str) -> None:
         """Add an exclusion pattern."""

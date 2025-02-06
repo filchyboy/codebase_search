@@ -1,83 +1,103 @@
-"""Command for managing search exclusions."""
+"""Exclusions command implementation."""
 
+from typing import List, Optional
 import click
 from rich.console import Console
 from rich.table import Table
 
 from ..config_manager import ConfigManager
-from ..logger import setup_logger
 
-logger = setup_logger()
 console = Console()
 
+def list_exclusions():
+    """List all current exclusions."""
+    config = ConfigManager()
+    exclusions = config.get_exclusions()
+    
+    if not exclusions:
+        console.print("[yellow]No exclusions configured.[/yellow]")
+        return
+    
+    table = Table(title="Current Exclusions")
+    table.add_column("Pattern", style="blue")
+    
+    for pattern in sorted(exclusions):
+        table.add_row(pattern)
+    
+    console.print(table)
+
+def add_exclusion(pattern: Optional[str] = None):
+    """Add a new exclusion pattern."""
+    if not pattern:
+        pattern = click.prompt("Enter exclusion pattern")
+    
+    config = ConfigManager()
+    config.add_exclusion(pattern)
+    console.print(f"[green]Added exclusion pattern: [blue]{pattern}[/blue][/green]")
+
+def remove_exclusion(pattern: Optional[str] = None):
+    """Remove an exclusion pattern."""
+    config = ConfigManager()
+    exclusions = config.get_exclusions()
+    
+    if not exclusions:
+        console.print("[yellow]No exclusions to remove.[/yellow]")
+        return
+    
+    if not pattern:
+        console.print("\nCurrent exclusions:")
+        for i, excl in enumerate(exclusions, 1):
+            console.print(f"{i}. {excl}")
+        
+        choice = click.prompt(
+            "\nEnter number to remove (or empty to cancel)",
+            type=click.Choice([str(i) for i in range(1, len(exclusions) + 1)]),
+            show_choices=False,
+            default="",
+            show_default=False
+        )
+        
+        if not choice:
+            return
+        
+        pattern = exclusions[int(choice) - 1]
+    
+    config.remove_exclusion(pattern)
+    console.print(f"[green]Removed exclusion pattern: [blue]{pattern}[/blue][/green]")
+
+def exclusions(args: Optional[List[str]] = None):
+    """Manage exclusion patterns for code search."""
+    if not args or not args[0]:
+        list_exclusions()
+        return
+    
+    command = args[0]
+    pattern = args[1] if len(args) > 1 else None
+    
+    commands = {
+        "list": list_exclusions,
+        "add": add_exclusion,
+        "remove": remove_exclusion
+    }
+    
+    if command not in commands:
+        console.print("[red]Invalid command. Use: list, add, or remove[/red]")
+        return
+    
+    if pattern:
+        commands[command](pattern)
+    else:
+        commands[command]()
+
 @click.group()
-def exclusions():
+def exclusions_cli():
     """Manage search exclusions."""
     pass
 
-@exclusions.command()
-@click.argument("pattern")
-def add(pattern: str):
-    """Add a new exclusion pattern."""
-    try:
-        config = ConfigManager()
-        current_exclusions = config.get_exclusions()
+@exclusions_cli.command()
+@click.argument("args", nargs=-1)
+def exclusions(args):
+    exclusions(args)
 
-        if pattern in current_exclusions:
-            console.print(f"[yellow]Pattern '{pattern}' is already excluded.[/yellow]")
-            return
-
-        config.add_exclusion(pattern)
-        logger.info(f"Added exclusion pattern: {pattern}")
-        console.print(f"[green]Successfully added exclusion pattern: [blue]{pattern}[/blue][/green]")
-
-    except Exception as e:
-        logger.error(f"Failed to add exclusion: {str(e)}")
-        console.print(f"[red]Error: {str(e)}[/red]")
-        raise click.Abort()
-
-@exclusions.command()
-@click.argument("pattern")
-def remove(pattern: str):
-    """Remove an exclusion pattern."""
-    try:
-        config = ConfigManager()
-        current_exclusions = config.get_exclusions()
-
-        if pattern not in current_exclusions:
-            console.print(f"[yellow]Pattern '{pattern}' is not in exclusions.[/yellow]")
-            return
-
-        config.remove_exclusion(pattern)
-        logger.info(f"Removed exclusion pattern: {pattern}")
-        console.print(f"[green]Successfully removed exclusion pattern: [blue]{pattern}[/blue][/green]")
-
-    except Exception as e:
-        logger.error(f"Failed to remove exclusion: {str(e)}")
-        console.print(f"[red]Error: {str(e)}[/red]")
-        raise click.Abort()
-
-@exclusions.command()
-def list():
-    """List all current exclusion patterns."""
-    try:
-        config = ConfigManager()
-        patterns = config.get_exclusions()
-
-        if not patterns:
-            console.print("[yellow]No exclusion patterns configured.[/yellow]")
-            return
-
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("Exclusion Patterns")
-        
-        for pattern in sorted(patterns):
-            table.add_row(pattern)
-
-        console.print("\n[bold]Current Exclusion Patterns:[/bold]")
-        console.print(table)
-
-    except Exception as e:
-        logger.error(f"Failed to list exclusions: {str(e)}")
-        console.print(f"[red]Error: {str(e)}[/red]")
-        raise click.Abort()
+if __name__ == "__main__":
+    exclusions_cli()

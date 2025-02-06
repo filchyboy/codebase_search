@@ -1,6 +1,5 @@
 """Help command implementation."""
 
-import click
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -10,74 +9,53 @@ console = Console()
 HELP_TEXT = """
 # Code Search CLI Help
 
-## Interactive REPL Mode
+## Overview
+Code Search CLI is a simple tool for searching through your codebase. It's designed to be installed and used within a single codebase.
 
-Start the interactive REPL:
+## First Time Setup
+On first run, the CLI will:
+1. Detect the current directory
+2. Ask you to confirm if it's your codebase root directory
+3. Save this configuration for future use
+
+## Usage
+
+Start the CLI:
 ```bash
-code-search repl --base-dir /path/to/search
+code-search
 ```
 
-In REPL mode:
+In the interactive mode:
 - Type search terms directly to search
-- Use `cs:` prefix for CLI commands (e.g. `cs: --help`)
+- Use `cs: --help` to see this help
 - Press Ctrl+C to exit
 
 ## Available Commands
 
-### Initialize
-```bash
-cs: init --base-dir /path/to/your/code
-```
-Initialize the tool with your codebase directory.
-
 ### Search
-Just type your search term in the REPL:
-```bash
->> your search term
-```
-
-Or use the search command:
-```bash
-cs: search "your query"
-```
-
-### Manage Exclusions
-```bash
-cs: exclusions add "*.pyc"    # Add exclusion pattern
-cs: exclusions remove "*.pyc"  # Remove exclusion pattern
-cs: exclusions list           # List all exclusions
-```
-
-## Examples
-
-Search for a function definition:
+Just type your search term:
 ```bash
 >> def process_data
 ```
 
-Case-insensitive search with grep options:
+### Change Root Directory
 ```bash
->> (?i)error handling
+cs: init
 ```
 
-List current exclusions:
+### Manage Exclusions
 ```bash
-cs: exclusions list
+cs: exclusions list    # List current exclusions
+cs: exclusions add     # Add new exclusion
+cs: exclusions remove  # Remove an exclusion
 ```
-
-## Configuration
-
-Configuration is stored in:
-- `~/.code-search-cli/settings.yaml`
-- Environment variables can be set in `~/.code-search-cli/.env`
 
 ## Tips
 - Use quotes around search queries with spaces
-- Add common build and cache directories to exclusions
 - Use grep regular expressions for advanced searches
+- The CLI automatically excludes common directories like .git, node_modules, etc.
 """
 
-@click.command()
 def show_help():
     """Show detailed help and usage information."""
     console.print(
