@@ -20,6 +20,7 @@ GREP_OPTIONS = (
     'guides,logs,storage,docs,database}'
 )
 
+
 def main():
     """
     Main entry point for the Grep CLI.
@@ -56,7 +57,7 @@ def main():
             result = subprocess.run(
                 command,
                 shell=True,
-                check=True, # Raise an error if the command fails
+                check=True,  # Raise an error if the command fails
                 text=True,
                 capture_output=True
                 )
@@ -70,6 +71,7 @@ def main():
         except KeyboardInterrupt:
             print("\nExiting Grep CLI.")
             break
+
 
 if __name__ == "__main__":
     main()
