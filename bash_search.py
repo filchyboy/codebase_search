@@ -1,3 +1,11 @@
+"""
+Simple Grep CLI. Type your search term and press Enter.
+Press Ctrl+C to exit.
+
+Usage:
+    python bash_search.py
+    python bash_search.py "search term"
+"""
 import subprocess
 import shlex
 
@@ -10,14 +18,14 @@ GREP_OPTIONS = '--exclude="*.md" --exclude-dir={node_modules,dist,vendor,filamen
 def main():
     print("Simple Grep CLI. Type your search term and press Enter.")
     print("Press Ctrl+C to exit.\n")
-    
+
     while True:
         try:
             # Get user input for the search term
             search_term = input("Search: ").strip()
             if not search_term:
                 continue  # Skip empty inputs
-            
+
             # Escape special characters in the search term
             safe_search_term = shlex.quote(search_term)
 
