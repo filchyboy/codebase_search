@@ -25,7 +25,7 @@ def main():
     """
     Main entry point for the Grep CLI.
 
-    Prints a simple banner and loop forever, 
+    Prints a simple banner and loop forever,
     prompting the user for a search term. If the user
     enters an empty string, it is skipped.
     Otherwise, the search term is escaped and
