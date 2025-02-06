@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+click = "*"  # For CLI interface
+pyyaml = "*"  # For YAML configuration
+python-dotenv = "*"  # For .env file handling
+rich = "*"  # For beautiful terminal output
+loguru = "*"  # For logging
+
+[dev-packages]
+pytest = "*"
+pytest-cov = "*"
+black = "*"
+isort = "*"
+flake8 = "*"
+pre-commit = "*"
+
+[requires]
+python_version = "3.8"
+
+[scripts]
+test = "pytest"
+format = "black ."
+lint = "flake8"

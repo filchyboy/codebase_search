@@ -1,0 +1,18 @@
+# Code Search CLI Configuration Template
+# Copy this file to settings.yaml and modify as needed
+
+# Base directory for code search
+base_dir: "~/code"
+
+# Patterns to exclude from search
+exclusions:
+  - "*.pyc"
+  - "__pycache__"
+  - "*.git"
+  - "*.svn"
+  - "node_modules"
+  - "venv"
+  - ".env"
+  - "*.egg-info"
+  - "dist"
+  - "build"
