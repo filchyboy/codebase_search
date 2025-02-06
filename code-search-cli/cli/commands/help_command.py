@@ -10,42 +10,59 @@ console = Console()
 HELP_TEXT = """
 # Code Search CLI Help
 
-## Overview
-Code Search CLI is a powerful tool for searching through your codebase efficiently.
+## Interactive REPL Mode
 
-## Commands
+Start the interactive REPL:
+```bash
+code-search repl --base-dir /path/to/search
+```
+
+In REPL mode:
+- Type search terms directly to search
+- Use `cs:` prefix for CLI commands (e.g. `cs: --help`)
+- Press Ctrl+C to exit
+
+## Available Commands
 
 ### Initialize
 ```bash
-code-search init --base-dir /path/to/your/code
+cs: init --base-dir /path/to/your/code
 ```
 Initialize the tool with your codebase directory.
 
 ### Search
+Just type your search term in the REPL:
 ```bash
-code-search search "your query" [options]
+>> your search term
 ```
-Options:
-- `--context, -c`: Number of context lines (default: 2)
-- `--ignore-case, -i`: Case-insensitive search
+
+Or use the search command:
+```bash
+cs: search "your query"
+```
 
 ### Manage Exclusions
 ```bash
-code-search exclusions add "*.pyc"    # Add exclusion pattern
-code-search exclusions remove "*.pyc"  # Remove exclusion pattern
-code-search exclusions list           # List all exclusions
+cs: exclusions add "*.pyc"    # Add exclusion pattern
+cs: exclusions remove "*.pyc"  # Remove exclusion pattern
+cs: exclusions list           # List all exclusions
 ```
 
-### Examples
+## Examples
 
 Search for a function definition:
 ```bash
-code-search search "def process_data"
+>> def process_data
 ```
 
-Case-insensitive search with more context:
+Case-insensitive search with grep options:
 ```bash
-code-search search -i -c 5 "error handling"
+>> (?i)error handling
+```
+
+List current exclusions:
+```bash
+cs: exclusions list
 ```
 
 ## Configuration
@@ -57,7 +74,7 @@ Configuration is stored in:
 ## Tips
 - Use quotes around search queries with spaces
 - Add common build and cache directories to exclusions
-- Use case-insensitive search for broader matches
+- Use grep regular expressions for advanced searches
 """
 
 @click.command()
