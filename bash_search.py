@@ -25,7 +25,13 @@ def main():
             command = f'grep -rHn {safe_search_term} {GREP_OPTIONS} {BASE_DIR}'
 
             # Execute the command using subprocess
-            result = subprocess.run(command, shell=True, text=True, capture_output=True)
+            result = subprocess.run(
+                command,
+                shell=True,
+                check=True, # Raise an error if the command fails
+                text=True,
+                capture_output=True
+                )
 
             # Display the results
             if result.stdout:
