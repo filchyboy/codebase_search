@@ -11,15 +11,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Ensures the latest commit is fetched
+
+    - name: Ensure Latest Code is Used
+      run: |
+        git fetch --all
+        git reset --hard origin/main
+
+    - name: Debug File Content
+      run: |
+        cat bash_search.py
+        ls -l bash_search.py
+
+    - name: Show Current Git Commit
+      run: git log -1 --oneline
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pylint
-    - name: Analysing the code with pylint
-      run: |
-        pylint $(git ls-files '*.py')
+
+    - name: Run Pylint
+      run: pylint .
