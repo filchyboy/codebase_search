@@ -9,6 +9,7 @@ pyyaml = "*"  # For YAML configuration
 python-dotenv = "*"  # For .env file handling
 rich = "*"  # For beautiful terminal output
 loguru = "*"  # For logging
+code-search-cli = {file = ".", editable = true}
 
 [dev-packages]
 pytest = "*"
