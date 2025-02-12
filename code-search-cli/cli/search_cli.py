@@ -36,9 +36,9 @@ def handle_command(
 
         # Command Routing Table
         command_map = {
-            "search": lambda: handle_search_command(" ".join(subcommand), base_dir) if subcommand else console.print("[red]Error: Missing search query.[/red]"),
+            "search": lambda: handle_search_command(" ".join(subcommand), base_dir) if subcommand else console.print("Error: Missing search query."),
             "exclusions": lambda: exclusions(subcommand),
-            "init": lambda: init(subcommand),
+            "init": lambda: handle_init_command(),
             "help": lambda: show_help(),
             "theme": lambda: handle_theme_command(subcommand),
         }
@@ -46,10 +46,45 @@ def handle_command(
         if command in command_map:
             command_map[command]()
         else:
-            console.print(f"[red]Unknown command: {command}[/red]")
+            console.print(f"Unknown command: {command}")
 
     except Exception as e:
-        console.print(f"[red]Command error: {str(e)}[/red]")
+        console.print(f"Command error: {str(e)}")
+
+def handle_init_command():
+    """Handles initialization by showing the current base directory and allowing the user to change it."""
+    config = ConfigManager()
+    theme = ThemeManager.get_theme()
+    current_base_dir = config.get_base_dir()
+
+    if current_base_dir:
+        console.print(f"\nCurrent search directory: [{theme['highlight']}]{current_base_dir}[/{theme['highlight']}]")
+    else:
+        console.print(f"\n[{theme['warning']}]No search directory has been set yet.[/]")
+
+    # Ask if they want to change the directory
+    console.print(f"\nWould you like to change this root directory? [{theme['highlight']}][Y,n] [/{theme['highlight']}]", end="")
+    change_dir = input().strip().lower() or "y"
+
+    if change_dir != "y":
+        console.print(f"[{theme['success']}]No changes made to the search directory.[/{theme['success']}]")
+        return
+
+    # Prompt for the new directory
+    console.print(f"\nPlease confirm this new search directory: ", end="")
+    new_base_dir = input().strip()
+
+    # Confirm the new path
+    console.print(f"\nIs this path correct? [{theme['highlight']}][Y,n]: {new_base_dir}[/] ", end="")
+    confirm = input().strip().lower() or "y"
+
+    if confirm != "y":
+        console.print(f"[{theme['warning']}]Setup aborted. No changes were made.[/]")
+        return
+
+    # Set and save the new directory
+    config.set_base_dir(str(new_base_dir))
+    console.print(f"\n[{theme['success']}]Successfully updated search directory to:[/] [{theme['highlight']}]{new_base_dir}[/]")
 
 def handle_search_command(query: str, base_dir: Path):
     """Handles executing a search query within the codebase, applying theme colors."""
@@ -107,7 +142,7 @@ def interactive_repl(ctx):
     while True:
         try:
             # Get user input
-            user_input = console.input(f"[{theme['highlight']}]>>[/] ").strip()
+            user_input = console.input(f"\n>> ").strip()
             if not user_input:
                 continue
 
@@ -120,10 +155,10 @@ def interactive_repl(ctx):
 
 
         except KeyboardInterrupt:
-            console.print("\n[green]Exiting Code Search CLI.[/green]")
+            console.print("\n[{theme['highlight']}]Exiting Code Search CLI.[/]")
             break
         except Exception as e:
-            console.print(f"[red]Error: {str(e)}[/red]")
+            console.print(f"Error: {str(e)}")
 
 @click.group(invoke_without_command=True)
 @click.version_option(version="0.1.0")
