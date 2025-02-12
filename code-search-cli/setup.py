@@ -6,8 +6,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="code-search-cli",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Christopher Filkins",
+    author_email="christopher.filkins@gmail.com",
     description="A CLI tool for searching through codebases",
     long_description=long_description,
     long_description_content_type="text/markdown",
