@@ -1,83 +1,102 @@
-"""Command for managing search exclusions."""
-
+"""Exclusions command implementation."""
+import sys
+from typing import List, Optional
 import click
 from rich.console import Console
 from rich.table import Table
 
 from ..config_manager import ConfigManager
-from ..logger import setup_logger
+from ..managers.exclusions_manager import ExclusionsManager
+from ..theme_manager import ThemeManager
 
-logger = setup_logger()
 console = Console()
+theme = ThemeManager.get_theme()
 
-@click.group()
-def exclusions():
-    """Manage search exclusions."""
-    pass
+def list_exclusions():
+    """List all current exclusions."""
+    exclusions_manager = ExclusionsManager()
+    exclusions = exclusions_manager.get_combined_exclusions()
+    
+    if not exclusions:
+        console.print(f"[{theme['warning']}]No exclusions configured.[/{theme['warning']}]")
+        return
+    
+    header_color = theme.get("header", "cyan")
+    title_color = theme.get("title", "bold magenta")
+    
+    table = Table(
+        title=f"[{title_color}]Current Exclusions[/{title_color}]",
+        show_header=True,
+        header_style=f"bold {header_color}"
+    )
+    table.add_column("Pattern", style=theme['highlight'])
+    
+    for pattern in sorted(exclusions):
+        table.add_row(pattern)
+    
+    console.print(table)
 
-@exclusions.command()
-@click.argument("pattern")
-def add(pattern: str):
-    """Add a new exclusion pattern."""
+def add_exclusion():
+    """Prompt user to add an exclusion pattern."""
     try:
-        config = ConfigManager()
-        current_exclusions = config.get_exclusions()
+        console.print(f"\n[{theme['input']}]Enter exclusion pattern:[/{theme['input']}] ", end="")
+        pattern = click.get_text_stream("stdin").readline().strip()
 
-        if pattern in current_exclusions:
-            console.print(f"[yellow]Pattern '{pattern}' is already excluded.[/yellow]")
+        if not pattern:
+            console.print(f"[{theme['warning']}]No pattern entered. Operation cancelled.[/{theme['warning']}]")
             return
 
-        config.add_exclusion(pattern)
-        logger.info(f"Added exclusion pattern: {pattern}")
-        console.print(f"[green]Successfully added exclusion pattern: [blue]{pattern}[/blue][/green]")
+        exclusions_manager = ExclusionsManager()
+
+        if pattern in exclusions_manager.get_combined_exclusions():
+            console.print(f"[{theme['warning']}]Pattern '{pattern}' is already excluded.[/{theme['warning']}]")
+            return
+
+        exclusions_manager.add_exclusion(pattern)
+        console.print(f"[{theme['success']}]Successfully added exclusion pattern: [/{theme['success']}] [{theme['highlight']}]{pattern}[/{theme['highlight']}]")
+
+        # ✅ Show updated exclusion list
+        list_exclusions()
 
     except Exception as e:
-        logger.error(f"Failed to add exclusion: {str(e)}")
-        console.print(f"[red]Error: {str(e)}[/red]")
-        raise click.Abort()
+        console.print(f"[{theme['error']}]Error: {str(e)}[/{theme['error']}]")
 
-@exclusions.command()
-@click.argument("pattern")
-def remove(pattern: str):
-    """Remove an exclusion pattern."""
+
+def remove_exclusion():
+    """Prompt user to remove an exclusion pattern."""
     try:
-        config = ConfigManager()
-        current_exclusions = config.get_exclusions()
-
-        if pattern not in current_exclusions:
-            console.print(f"[yellow]Pattern '{pattern}' is not in exclusions.[/yellow]")
-            return
-
-        config.remove_exclusion(pattern)
-        logger.info(f"Removed exclusion pattern: {pattern}")
-        console.print(f"[green]Successfully removed exclusion pattern: [blue]{pattern}[/blue][/green]")
-
-    except Exception as e:
-        logger.error(f"Failed to remove exclusion: {str(e)}")
-        console.print(f"[red]Error: {str(e)}[/red]")
-        raise click.Abort()
-
-@exclusions.command()
-def list():
-    """List all current exclusion patterns."""
-    try:
-        config = ConfigManager()
-        patterns = config.get_exclusions()
-
-        if not patterns:
-            console.print("[yellow]No exclusion patterns configured.[/yellow]")
-            return
-
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("Exclusion Patterns")
+        exclusions_manager = ExclusionsManager()
+        exclusions = exclusions_manager.get_combined_exclusions()
         
-        for pattern in sorted(patterns):
-            table.add_row(pattern)
+        if not exclusions:
+            console.print(f"[{theme['warning']}]No exclusions to remove.[/{theme['warning']}]")
+            return
+        
+        console.print(f"\n[{theme['highlight']}]Current exclusions:[/{theme['highlight']}]")
+        for i, excl in enumerate(exclusions, 1):
+            list_item_color = theme.get("list_item", "blue")
+            console.print(f"[{theme['list_item']}]{i}. {excl}[/{theme['list_item']}]")
+        
+        console.print(f"\n[{theme['input']}]Enter number to remove (or empty to cancel):[/{theme['input']}] ", end="")
+        choice = click.get_text_stream("stdin").readline().strip()
 
-        console.print("\n[bold]Current Exclusion Patterns:[/bold]")
-        console.print(table)
+        if not choice or not choice.isdigit():
+            console.print(f"[{theme['warning']}]Invalid selection. Operation cancelled.[/{theme['warning']}]")
+            return
+
+        index = int(choice) - 1
+        if index < 0 or index >= len(exclusions):
+            console.print(f"[{theme['error']}]Invalid selection. No exclusion removed.[/{theme['error']}]")
+            return
+
+        pattern = exclusions[index]
+        exclusions_manager.remove_exclusion(pattern)
+
+        console.print(f"[{theme['success']}]Successfully removed exclusion pattern: [/{theme['success']}] [{theme['highlight']}]{pattern}[/{theme['highlight']}]")
+
+        # ✅ Show updated exclusion list
+        list_exclusions()
 
     except Exception as e:
-        logger.error(f"Failed to list exclusions: {str(e)}")
-        console.print(f"[red]Error: {str(e)}[/red]")
-        raise click.Abort()
+        console.print(f"[{theme['error']}]Error: {str(e)}[/{theme['error']}]")
+        raise click.Abort()   

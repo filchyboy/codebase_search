@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Main entry point for the code search CLI."""
-
+import re
 import click
 from rich.console import Console
 import shlex
@@ -8,7 +8,8 @@ import subprocess
 from pathlib import Path
 
 from .commands.search_command import search
-from .commands.exclusions_command import exclusions
+from .commands.exclusions_command import list_exclusions, add_exclusion, remove_exclusion
+from .managers.exclusions_manager import ExclusionsManager
 from .commands.init_command import init
 from .commands.help_command import show_help
 from .config_manager import ConfigManager
@@ -17,6 +18,13 @@ from .logger import setup_logger
 
 console = Console()
 logger = setup_logger()
+theme = ThemeManager.get_theme()
+config = ConfigManager()
+
+# ✅ Check if settings.yaml exists. If not, trigger first-time setup.
+if not config.get_base_dir():
+    console.print("\n[{theme['warning']}]First-time setup required.[/{theme['warning']}]")
+    config._first_time_setup()
 
 def handle_command(
     ctx,
@@ -26,21 +34,25 @@ def handle_command(
     """Process and execute a CLI command within the REPL context."""
     try:
         # Split command into arguments
+        command_input = command_input.lstrip(":").strip()
         args = shlex.split(command_input)
 
         if not args:
             return
         
         command = args[0]
-        subcommand = args[1:] if len(args) > 1 else None
+        if not base_dir or not base_dir.exists():
+            console.print("\nError: No base directory set. Please run `: init` first.")
+            return
 
         # Command Routing Table
         command_map = {
-            "search": lambda: handle_search_command(" ".join(subcommand), base_dir) if subcommand else console.print("Error: Missing search query."),
-            "exclusions": lambda: exclusions(subcommand),
-            "init": lambda: handle_init_command(),
-            "help": lambda: show_help(),
-            "theme": lambda: handle_theme_command(subcommand),
+            "": lambda: ctx.invoke(show_help),  # `:` triggers help
+            "init": lambda: handle_init_command(),  # `: init` resets root dir
+            "list": lambda: ctx.invoke(list_exclusions),  # `: exc` lists exclusions
+            "add": lambda: ctx.invoke(add_exclusion),  # `: exc+` starts exclusion addition
+            "rm": lambda: ctx.invoke(remove_exclusion),  # `: exc-` starts exclusion removal
+            "theme": lambda: handle_theme_command(),  # ✅ `: theme` starts user flow
         }
 
         if command in command_map:
@@ -54,42 +66,61 @@ def handle_command(
 def handle_init_command():
     """Handles initialization by showing the current base directory and allowing the user to change it."""
     config = ConfigManager()
-    theme = ThemeManager.get_theme()
+    exclusions_manager = ExclusionsManager()
+    
     current_base_dir = config.get_base_dir()
 
+    # ✅ Step 1: Show the current base directory if it exists
     if current_base_dir:
-        console.print(f"\nCurrent search directory: [{theme['highlight']}]{current_base_dir}[/{theme['highlight']}]")
-    else:
-        console.print(f"\n[{theme['warning']}]No search directory has been set yet.[/]")
+        console.print(f"\n[{theme['highlight']}]The existing root directory is:[/] {current_base_dir}")
 
-    # Ask if they want to change the directory
-    console.print(f"\nWould you like to change this root directory? [{theme['highlight']}][Y,n] [/{theme['highlight']}]", end="")
-    change_dir = input().strip().lower() or "y"
+        # ✅ Step 2: Ask the user if they want to change it
+        console.print(f"\n[{theme['warning']}]Would you like to change it? [Y,n] [/]", end="")
+        change_dir = input().strip().lower() or "y"
 
-    if change_dir != "y":
-        console.print(f"[{theme['success']}]No changes made to the search directory.[/{theme['success']}]")
-        return
+        if change_dir != "y":
+            console.print(f"[{theme['success']}]No changes made to the search directory.[/]")
+            return
 
-    # Prompt for the new directory
-    console.print(f"\nPlease confirm this new search directory: ", end="")
-    new_base_dir = input().strip()
+    # ✅ Step 3: Prompt for a new root directory
+    new_base_dir = ""
+    while not new_base_dir or not Path(new_base_dir).exists():
+        console.print(f"\n[{theme['highlight']}]Enter new root directory:[/] ", end="")
+        new_base_dir = input().strip()
 
-    # Confirm the new path
-    console.print(f"\nIs this path correct? [{theme['highlight']}][Y,n]: {new_base_dir}[/] ", end="")
+        # ✅ Strip out unwanted escape sequences from pasted input
+        new_base_dir = re.sub(r"^\x1b\[200~|\x1b\[201~$", "", new_base_dir).strip()
+
+        # ✅ Validate new directory
+        if not new_base_dir or not Path(new_base_dir).exists():
+            console.print(f"[{theme['error']}]Invalid directory path. Please enter a valid path.[/]")
+            new_base_dir = ""
+
+    # ✅ Step 4: Ask for confirmation before saving
+    console.print(f"\n[{theme['highlight']}]Please confirm new root directory: {new_base_dir} [Y,n][/] ", end="")
     confirm = input().strip().lower() or "y"
 
     if confirm != "y":
         console.print(f"[{theme['warning']}]Setup aborted. No changes were made.[/]")
         return
 
-    # Set and save the new directory
-    config.set_base_dir(str(new_base_dir))
-    console.print(f"\n[{theme['success']}]Successfully updated search directory to:[/] [{theme['highlight']}]{new_base_dir}[/]")
+    # ✅ Step 5: Save the new base directory
+    config.set_base_dir(new_base_dir)
+    new_base_dir_path = Path(config.get_base_dir())
+
+    if not new_base_dir_path or not new_base_dir_path.exists():
+        console.print(f"[{theme['error']}]Failed to set base directory. Please try again.[/]")
+        return
+
+    # ✅ Update exclusions based on detected codebase type
+    console.print(f"[{theme['highlight']}]Detected codebase type:[/] {exclusions_manager.language}")
+    config.set_exclusions(exclusions_manager.get_combined_exclusions())
+
+    console.print(f"[{theme['success']}]Updated search directory and exclusions list based on detected codebase.[/]")
 
 def handle_search_command(query: str, base_dir: Path):
     """Handles executing a search query within the codebase, applying theme colors."""
 
-    theme = ThemeManager.get_theme()
 
     if not query:
         console.print("[{theme['error']}]Error: Search query cannot be empty.[/]")
@@ -115,50 +146,64 @@ def handle_search_command(query: str, base_dir: Path):
     except subprocess.CalledProcessError as e:
         console.print(f"[{theme['error']}]Search error: {str(e)}[/]")
 
-def handle_theme_command(args):
-    """Handles theme switching commands."""
-    if not args or args[0] != "set" or len(args) < 2:
-        console.print("[yellow]Usage: theme set [light|dark][/yellow]")
-        return
+def handle_theme_command():
+    """Initiates the user flow for changing the theme."""
+    console.print(f"\n[{theme['highlight']}]Select a theme:[/]")
+    console.print(f"[1] Light Mode")
+    console.print(f"[2] Dark Mode")
 
-    theme_name = args[1]
-    if theme_name in ThemeManager.THEMES:
-        ThemeManager.set_theme(theme_name)
-        console.print(f"[{theme['success']}]Theme set to {theme_name}[/]")
-    else:
-        console.print("[{theme['error']}]Invalid theme. Use 'light' or 'dark'.[/]")
+    choice = click.prompt(
+        "\nEnter your choice (1 or 2)",
+        type=click.Choice(["1", "2"]),
+        show_choices=False
+    )
+
+    theme_name = "light" if choice == "1" else "dark"
+    ThemeManager.set_theme(theme_name)
+    
+    console.print(f"[{theme['success']}]Theme set to {theme_name.capitalize()}[/]")
+
 
 def interactive_repl(ctx):
     """Run the interactive REPL."""
     config = ConfigManager()
     base_dir = Path(config.get_base_dir())
-    theme = ThemeManager.get_theme()
+
 
     console.print(f"\n[{theme['highlight']}]Code Search CLI[/] - Interactive Mode")
     console.print(f"• Enter search terms directly to search")
-    console.print(f"• Use [{theme['highlight']}]cs: command[/] for CLI commands (e.g. [{theme['highlight']}]cs: --help[/])")
+    console.print(f"• Use [{theme['highlight']}]: command[/] for CLI commands (e.g. [{theme['highlight']}]: --help[/{theme['highlight']}])")
     console.print(f"• Press [{theme['error']}]Ctrl+C[/] to exit\n")
 
-    while True:
-        try:
-            # Get user input
-            user_input = console.input(f"\n>> ").strip()
-            if not user_input:
-                continue
+    try:
+        while True:
+            try:
+                # Get user input
+                user_input = input(f"\n>> ").strip()
+                if not user_input:
+                    continue
 
-            # Check if this is a command or a search
-            if user_input.startswith("cs:"):
-                command = user_input[3:].strip()
-                handle_command(ctx, command, base_dir)
-            else:
-                handle_command(ctx, f"search {user_input}", base_dir)
+                if user_input == ":":
+                    ctx.invoke(show_help)
+                    continue
+
+                # Check if this is a command or a search
+                if user_input.startswith(":"):
+                    command = user_input.lstrip(":").strip()
+                    handle_command(ctx, command, base_dir)
+                else:
+                    handle_command(ctx, f"search {user_input}", base_dir)
 
 
-        except KeyboardInterrupt:
-            console.print("\n[{theme['highlight']}]Exiting Code Search CLI.[/]")
-            break
-        except Exception as e:
-            console.print(f"Error: {str(e)}")
+            except KeyboardInterrupt:
+                console.print("\n\nExiting Code Search CLI.\n")
+                return
+            except Exception as e:
+                console.print(f"Error: {str(e)}")
+
+    except KeyboardInterrupt:
+        console.print("\n\nGoodbye!")
+        return
 
 @click.group(invoke_without_command=True)
 @click.version_option(version="0.1.0")
@@ -187,11 +232,7 @@ def repl(base_dir: Path = None):
     # Start the REPL
     interactive_repl(ctx)
 
-# Register all commands
-cli.add_command(search)
-cli.add_command(exclusions)
-cli.add_command(init)
-cli.add_command(show_help)
+
 
 if __name__ == "__main__":
     cli()
