@@ -16,10 +16,9 @@ Start the interactive REPL:
 ```bash
 code-search repl --base-dir /path/to/search
 ```
-
 In REPL mode:
 - Type search terms directly to search
-- Use `cs:` prefix for CLI commands (e.g. `cs: --help`)
+- Use `:` prefix for CLI commands (e.g. `: --help`)
 - Press Ctrl+C to exit
 
 ## Available Commands
@@ -35,34 +34,16 @@ Just type your search term in the REPL:
 ```bash
 >> your search term
 ```
-
 Or use the search command:
 ```bash
-cs: search "your query"
+: search "your query"
 ```
 
 ### Manage Exclusions
 ```bash
-cs: exclusions add "*.pyc"    # Add exclusion pattern
-cs: exclusions remove "*.pyc"  # Remove exclusion pattern
-cs: exclusions list           # List all exclusions
-```
-
-## Examples
-
-Search for a function definition:
-```bash
->> def process_data
-```
-
-Case-insensitive search with grep options:
-```bash
->> (?i)error handling
-```
-
-List current exclusions:
-```bash
-cs: exclusions list
+: exclusions add "*.pyc"    # Add exclusion pattern
+: exclusions remove "*.pyc"  # Remove exclusion pattern
+: exclusions list           # List all exclusions
 ```
 
 ## Configuration

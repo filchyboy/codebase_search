@@ -9,20 +9,20 @@ class ThemeManager:
     DEFAULT_THEME = "light"
     THEMES = {
         "light": {
-            "primary": "black",
-            "secondary": "dim",
-            "highlight": "blue",
-            "warning": "yellow",
-            "error": "red",
-            "success": "green",
+            "primary": "#333333",
+            "secondary": "#666666",
+            "highlight": "#0057B8",
+            "warning": "#FFAA00",
+            "error": "#B00020",
+            "success": "#007A33",
         },
         "dark": {
-            "primary": "white",
-            "secondary": "bright_black",
-            "highlight": "cyan",
-            "warning": "bright_yellow",
-            "error": "bright_red",
-            "success": "bright_green",
+            "primary": "#DDDDDD",
+            "secondary": "#AAAAAA",
+            "highlight": "#00A3E0",
+            "warning": "#FFC107",
+            "error": "#FF4D4D",
+            "success": "#32CD32",
         },
     }
 
