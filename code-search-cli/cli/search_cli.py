@@ -3,6 +3,7 @@
 import re
 import click
 from rich.console import Console
+from rich.markup import escape
 import shlex
 import subprocess
 from pathlib import Path
@@ -106,25 +107,25 @@ def handle_init_command():
 
     # ✅ Step 5: Save the new base directory
     config.set_base_dir(new_base_dir)
-    new_base_dir_path = Path(config.get_base_dir())
-
-    if not new_base_dir_path or not new_base_dir_path.exists():
-        console.print(f"[{theme['error']}]Failed to set base directory. Please try again.[/]")
-        return
+    exclusions_manager = ExclusionsManager()
 
     # ✅ Update exclusions based on detected codebase type
     console.print(f"[{theme['highlight']}]Detected codebase type:[/] {exclusions_manager.language}")
-    config.set_exclusions(exclusions_manager.get_combined_exclusions())
+    exclusions_manager.update_exclusions(config)
 
     console.print(f"[{theme['success']}]Updated search directory and exclusions list based on detected codebase.[/]")
 
 def handle_search_command(query: str, base_dir: Path):
     """Handles executing a search query within the codebase, applying theme colors."""
 
+    theme = ThemeManager.get_theme()
 
     if not query:
-        console.print("[{theme['error']}]Error: Search query cannot be empty.[/]")
+        console.print(f"[{theme['error']}]Error: Search query cannot be empty.[/]")
+    if not base_dir or not base_dir.exists():
+        console.print(f"[{theme['error']}]Error: No valid base directory set. Run `: init` first.[/]")
         return
+
     safe_term = shlex.quote(query)
     exclusions = "--exclude-dir={.git,node_modules,venv,__pycache__} --exclude='*.pyc'"
     command = f'grep -rHn {safe_term} {exclusions} {base_dir}'
@@ -138,10 +139,11 @@ def handle_search_command(query: str, base_dir: Path):
         )
 
         if result.stdout:
+            escaped_output = escape(result.stdout)
             console.print(f"[{theme['highlight']}]Search results for:[/] [{theme['success']}]{query}[/]\n")
-            console.print(result.stdout)
+            console.print(escaped_output)
         else:
-            console.print(f"[{theme['warning']}]No results found for:[/] [{theme['error']}]{query}[/]")
+            console.print(f"]No results found for: [{theme['error']}]{query}[/]")
 
     except subprocess.CalledProcessError as e:
         console.print(f"[{theme['error']}]Search error: {str(e)}[/]")
@@ -191,8 +193,10 @@ def interactive_repl(ctx):
                 if user_input.startswith(":"):
                     command = user_input.lstrip(":").strip()
                     handle_command(ctx, command, base_dir)
-                else:
-                    handle_command(ctx, f"search {user_input}", base_dir)
+                    continue
+
+                # ✅ Step 3: Otherwise, treat input as a search term
+                handle_search_command(user_input, base_dir)
 
 
             except KeyboardInterrupt:
