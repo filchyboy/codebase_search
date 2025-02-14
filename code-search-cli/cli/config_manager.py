@@ -24,10 +24,7 @@ class ConfigManager:
         self.config_file = self.config_dir / "settings.yaml"
         self.env_file = self.config_dir / ".env"
 
-        console.print(f"Config directory: {self.config_dir}")
-        console.print(f"Config file: {self.config_file}")
-
-
+        # ✅ Ensure the config directory exists
         self._ensure_config_dir()
         self.config = self._load_config()
 
@@ -127,3 +124,8 @@ class ConfigManager:
         if pattern in self.config["exclusions"]:
             self.config["exclusions"].remove(pattern)
             self.save_config(self.config)
+
+    def set_exclusions(self, exclusions: List[str]):
+        """Update exclusions in the settings.yaml file."""
+        self.config["exclusions"] = exclusions
+        self.save_config(self.config)

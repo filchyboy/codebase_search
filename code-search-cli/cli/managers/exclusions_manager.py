@@ -3,10 +3,13 @@ import re
 from pathlib import Path
 from typing import List, Dict, Set
 from ..config_manager import ConfigManager
+from ..theme_manager import ThemeManager
+from rich.console import Console
+console = Console()
 
 class ExclusionsManager:
     """Handles exclusion logic including language-based and user-defined exclusions."""
-
+    theme = ThemeManager.get_theme()
     # Standard exclusions by language
     EXCLUSIONS_BY_LANGUAGE: Dict[str, List[str]] = {
         "Python": ["*.pyc", "__pycache__", "venv", ".pytest_cache", "*.pyo", "*.pyd", "*.whl",
@@ -25,8 +28,30 @@ class ExclusionsManager:
                "*.pdb", "*.appx", "AppPackages", "node_modules", "*.log"],
         "Ruby": ["*.gem", ".bundle", ".yardoc", "coverage", "tmp", "vendor/bundle",
                  "log", "node_modules", "*.log"],
-        "PHP": ["vendor", "*.log", "composer.lock", "composer.phar", ".phpunit.result.cache",
-                "node_modules", "coverage", "cache", "*.tar.gz"],
+        "PHP": [
+            "vendor",
+            "*.log",
+            "composer.lock",
+            "composer.phar",
+            ".phpunit.result.cache",
+            "node_modules",
+            "coverage",
+            "cache",
+            "*.tar.gz",
+        ],
+        "Laravel": [
+            "storage",
+            "bootstrap/cache",
+            "node_modules",
+            "vendor",
+            ".env",
+            "composer.lock",
+            "public/storage",
+            "tests",
+            "phpunit.xml",
+            "coverage",
+            "dist",
+        ],
     }
 
     def __init__(self):
@@ -34,27 +59,74 @@ class ExclusionsManager:
         self.config = ConfigManager()
         self.base_dir = Path(self.config.get_base_dir())
         self.language = self.detect_codebase_type()
-        self.system_exclusions = set(self.EXCLUSIONS_BY_LANGUAGE.get(self.language, []))
+        # ✅ Ensure system_exclusions is initialized
+        self.system_exclusions = set()
         self.user_exclusions = set(self.config.get_exclusions())
 
-    def detect_codebase_type(self) -> str:
-        """Detects the primary codebase language based on project files."""
+        # ✅ Ensure exclusions are updated when a new base_dir is set
+        if self.base_dir:
+            self.update_exclusions()
+    def detect_codebase_type(self) -> Set[str]:
+        """Detect all applicable frameworks in the codebase instead of returning just one."""
+
+        detected_frameworks = set()
+
+        # ✅ Prioritize Laravel over generic PHP
+        if (self.base_dir / "artisan").exists() and (self.base_dir / "composer.json").exists():
+            detected_frameworks.add("Laravel")
+
+        if (self.base_dir / "composer.json").exists():
+            detected_frameworks.add("PHP")
+
+        if (self.base_dir / "package.json").exists():
+            detected_frameworks.add("JavaScript")
+
         language_signatures = {
             "Python": ["requirements.txt", "setup.py", "Pipfile", "__init__.py"],
-            "JavaScript": ["package.json", "yarn.lock"],
             "Java": ["pom.xml", "build.gradle"],
             "Go": ["go.mod", "main.go"],
             "Rust": ["Cargo.toml"],
             "C++": ["CMakeLists.txt", ".cpp", ".h"],
             "C#": [".csproj", "Program.cs"],
             "Ruby": ["Gemfile"],
-            "PHP": ["composer.json", "index.php"],
         }
 
         for language, signatures in language_signatures.items():
             if any((self.base_dir / signature).exists() for signature in signatures):
-                return language
-        return "Unknown"
+                detected_frameworks.add(language)
+
+        if detected_frameworks:
+            # console.print(f"Detected codebase types: {', '.join(detected_frameworks)}")
+            return detected_frameworks
+
+        return {"Unknown"}
+
+    def update_exclusions(self):
+        """Updates exclusions based on all detected frameworks in the codebase."""
+        theme = ThemeManager.get_theme()
+
+        # ✅ Detect all relevant frameworks ONCE
+        if not hasattr(self, "_cached_frameworks"):
+            self._cached_frameworks = self.detect_codebase_type()
+
+        detected_frameworks = self._cached_frameworks
+        console.print(f"\nDetected codebase types: [{theme['highlight']}]{', '.join(detected_frameworks)}[/{theme['highlight']}]\n")
+
+        # ✅ Get exclusions for all detected frameworks
+        all_exclusions = set()
+        for framework in detected_frameworks:
+            all_exclusions.update(self.EXCLUSIONS_BY_LANGUAGE.get(framework, []))
+
+        # ✅ Merge with user-defined exclusions
+        self.system_exclusions = all_exclusions
+        updated_exclusions = sorted(self.system_exclusions | self.user_exclusions)
+
+        # ✅ Save exclusions only if they changed
+        current_exclusions = set(self.config.get_exclusions())
+        if current_exclusions != set(updated_exclusions):
+            self.config.set_exclusions(updated_exclusions)
+            console.print(f"\nExclusions updated for detected frameworks: [{theme['success']}]{', '.join(detected_frameworks)}[/{theme['success']}]")
+            console.print(f"\nUpdated Exclusions List:\n [{theme['highlight']}]{updated_exclusions}[/{theme['highlight']}]")
 
     def get_combined_exclusions(self) -> Set[str]:
         """Returns a complete set of exclusions (system + user)."""

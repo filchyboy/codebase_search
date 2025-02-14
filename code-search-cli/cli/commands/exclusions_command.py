@@ -15,6 +15,7 @@ theme = ThemeManager.get_theme()
 def list_exclusions():
     """List all current exclusions."""
     exclusions_manager = ExclusionsManager()
+    # exclusions_manager.update_exclusions()
     exclusions = exclusions_manager.get_combined_exclusions()
     
     if not exclusions:
@@ -26,7 +27,7 @@ def list_exclusions():
     
     table = Table(
         title=f"[{title_color}]Current Exclusions[/{title_color}]",
-        show_header=True,
+        show_header=False,
         header_style=f"bold {header_color}"
     )
     table.add_column("Pattern", style=theme['highlight'])
