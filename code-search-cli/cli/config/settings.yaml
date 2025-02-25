@@ -1,0 +1,42 @@
+base_dir: /Users/malevich/Repos/swingcity-dashboard
+detected_frameworks:
+- JavaScript
+- Laravel
+- PHP
+editor:
+  args:
+  - --goto
+  command: code
+  name: vscode
+exclusions:
+  system_generated:
+  - '*.log'
+  - '*.tar.gz'
+  - .cache
+  - .env
+  - .eslintcache
+  - .npm
+  - .phpunit.result.cache
+  - .yarn
+  - bootstrap/cache
+  - bower_components
+  - build
+  - cache
+  - composer.lock
+  - composer.phar
+  - coverage
+  - dist
+  - jspm_packages
+  - node_modules
+  - node_modules/
+  - phpunit.xml
+  - public/storage
+  - storage
+  - tests
+  - vendor
+  - vendor/
+  user_path:
+  - .git
+  - js
+  user_string: []
+theme: dark

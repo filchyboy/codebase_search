@@ -10,6 +10,7 @@ python-dotenv = "*"  # For .env file handling
 rich = "*"  # For beautiful terminal output
 loguru = "*"  # For logging
 click-repl = "*"
+pytest = "*"
 code-search-cli = {file = ".", editable = true}
 
 [dev-packages]
