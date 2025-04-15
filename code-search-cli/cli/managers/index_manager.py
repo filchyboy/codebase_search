@@ -109,8 +109,8 @@ class BackgroundIndexer(threading.Thread):
                         try:
                             with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                                 content = f.read()
-                        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
-                            content = f.read()
+                        except Exception as e:
+                            return rel_path, {"error": str(e), "mtime": file_mtime, "size": file_size}, {}
                         
                         # Create file signature
                         file_hash = hashlib.md5(content.encode('utf-8', errors='replace')).hexdigest()
