@@ -267,7 +267,8 @@ def create_clickable_link(file_path: str, line_number: Optional[int] = None,
     elif editor_name == "sublime":
         # Sublime Text
         if system == "Windows":
-            uri = f"subl://open?url=file:///{norm_path.replace('\\', '/')}"
+            norm_path_slash = norm_path.replace('\\', '/')
+            uri = f"subl://open?url=file:///{norm_path_slash}"
         else:
             uri = f"subl://open?url=file://{norm_path}"
         
