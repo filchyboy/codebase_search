@@ -6,13 +6,22 @@ base_dir: "~/code"
 
 # Patterns to exclude from search
 exclusions:
-  - "*.pyc"
-  - "__pycache__"
-  - "*.git"
-  - "*.svn"
-  - "node_modules"
-  - "venv"
-  - ".env"
-  - "*.egg-info"
-  - "dist"
-  - "build"
+  # System-detected exclusions (don't edit - these are updated automatically)
+  system_generated: []
+  
+  # User-defined path exclusions (directories and file patterns to exclude)
+  user_path:
+    - ".git"
+    - ".svn"
+    - "node_modules"
+    - "venv"
+    - "__pycache__"
+    - "*.pyc"
+    - "dist"
+    - "build"
+    - "js"
+    - "*.egg-info"
+    - ".env"
+  
+  # User-defined string exclusions (content to exclude from results)
+  user_string: []

@@ -18,44 +18,67 @@ code-search repl --base-dir /path/to/search
 ```
 In REPL mode:
 - Type search terms directly to search
-- Use `:` prefix for CLI commands (e.g. `: --help`)
+- Use `:` prefix for CLI commands (e.g. `: help`)
 - Press Ctrl+C to exit
 
 ## Available Commands
 
 ### Initialize
 ```bash
-cs: init --base-dir /path/to/your/code
+: init
 ```
-Initialize the tool with your codebase directory.
+Initialize or change the tool's search directory.
 
 ### Search
 Just type your search term in the REPL:
 ```bash
 >> your search term
 ```
-Or use the search command:
+For regex search, use slashes:
 ```bash
-: search "your query"
+>> /pattern\\w+/
+```
+For case-insensitive regex search:
+```bash
+>> /pattern\\w+/i
 ```
 
 ### Manage Exclusions
 ```bash
-: exclusions add "*.pyc"    # Add exclusion pattern
-: exclusions remove "*.pyc"  # Remove exclusion pattern
-: exclusions list           # List all exclusions
+: list           # List all exclusions
+: add "*.pyc"    # Add exclusion pattern
+: rm             # Remove exclusion pattern (interactive)
 ```
 
-## Configuration
+### Index Management
+```bash
+: index          # Manage search index
+```
+The search index speeds up searches and runs in the background without blocking searches.
 
-Configuration is stored in:
-- `~/.code-search-cli/settings.yaml`
-- Environment variables can be set in `~/.code-search-cli/.env`
+### Theme Settings
+```bash
+: theme          # Change between light/dark mode
+```
+
+### Editor Settings
+```bash
+: editor         # Configure your preferred editor for opening files
+: open <number>  # Open a file from search results by its number
+```
+
+## Performance Features
+
+- **Progress Indicators**: Shows search progress in real-time
+- **Background Indexing**: Indexes files without blocking searches
+- **Multithreaded Search**: Utilizes multiple CPU cores for better performance
+- **Smart Exclusions**: Automatically detects and excludes vendor directories
 
 ## Tips
-- Use quotes around search queries with spaces
+- Use the indexing feature for faster searches in large codebases
+- The index automatically updates when files change
 - Add common build and cache directories to exclusions
-- Use grep regular expressions for advanced searches
+- Use regex for advanced searches
 """
 
 @click.command()

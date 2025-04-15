@@ -15,6 +15,10 @@ class ThemeManager:
             "warning": "#FFAA00",
             "error": "#B00020",
             "success": "#007A33",
+            "title": "#0057B8",
+            "header": "#333333",
+            "input": "#0057B8",
+            "list_item": "#333333",
         },
         "dark": {
             "primary": "#DDDDDD",
@@ -23,6 +27,10 @@ class ThemeManager:
             "warning": "#FFC107",
             "error": "#FF4D4D",
             "success": "#32CD32",
+            "title": "#00A3E0",
+            "header": "#DDDDDD",
+            "input": "#00A3E0",
+            "list_item": "#DDDDDD",
         },
     }
 

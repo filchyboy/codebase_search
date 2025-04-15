@@ -5,7 +5,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 
-from ..config_manager import ConfigManager
+from cli.managers.config_manager import ConfigManager
 from ..logger import setup_logger
 
 logger = setup_logger()
